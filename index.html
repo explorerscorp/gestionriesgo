@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plan de Trading Profesional</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@2.5.0/fonts/remixicon.css" rel="stylesheet">
+</head>
+<body class="bg-gray-50 min-h-screen flex flex-col">
+    <header class="bg-gradient-to-r from-green-500 to-emerald-600 text-white py-6 shadow-lg">
+        <div class="container mx-auto text-center">
+            <h1 class="text-3xl font-bold tracking-wider">Plan de Trading Profesional</h1>
+            <p class="text-sm mt-2 text-green-100">Optimiza tu estrategia de inversión</p>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-8 flex-grow">
+        <div class="bg-white rounded-xl shadow-2xl p-6 border border-gray-100">
+            <div class="grid md:grid-cols-3 gap-6">
+                <!-- Columna de Configuración -->
+                <div class="space-y-4 md:col-span-2">
+                    <div class="grid md:grid-cols-3 gap-4">
+                        <div>
+                            <label for="initialBalance" class="block text-sm font-medium text-gray-700">Saldo Inicial ($)</label>
+                            <input type="number" id="initialBalance" 
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring focus:ring-green-200" 
+                                value="100" step="0.01">
+                        </div>
+                        <div>
+                            <label for="growthRate" class="block text-sm font-medium text-gray-700">Porcentaje Diario (%)</label>
+                            <input type="number" id="growthRate" 
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring focus:ring-green-200" 
+                                value="3" step="0.1">
+                        </div>
+                        <div>
+                            <label for="riskManagement" class="block text-sm font-medium text-gray-700">Gestión de Riesgo (%)</label>
+                            <input type="number" id="riskManagement" 
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring focus:ring-green-200" 
+                                value="1" step="0.1" max="5">
+                        </div>
+                    </div>
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="months" class="block text-sm font-medium text-gray-700">Periodo de Proyección</label>
+                            <select id="months" 
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring focus:ring-green-200">
+                                <option value="1">1 mes</option>
+                                <option value="2">2 meses</option>
+                                <option value="3">3 meses</option>
+                                <option value="6">6 meses</option>
+                                <option value="12">12 meses</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="tradingStyle" class="block text-sm font-medium text-gray-700">Estilo de Trading</label>
+                            <select id="tradingStyle" 
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring focus:ring-green-200">
+                                <option value="conservative">Conservador</option>
+                                <option value="balanced" selected>Balanceado</option>
+                                <option value="aggressive">Agresivo</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="flex space-x-4 mt-4">
+                        <button onclick="generatePlan()" 
+                            class="flex-1 bg-green-500 text-white py-2 rounded-md hover:bg-green-600 transition duration-300 ease-in-out flex items-center justify-center">
+                            <i class="ri-line-chart-line mr-2"></i> Generar Plan
+                        </button>
+                        <button onclick="exportToExcel()" 
+                            class="flex-1 bg-blue-500 text-white py-2 rounded-md hover:bg-blue-600 transition duration-300 ease-in-out flex items-center justify-center">
+                            <i class="ri-file-excel-line mr-2"></i> Exportar Excel
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tarjetas de Métricas -->
+                <div class="grid grid-cols-2 gap-4 h-full">
+                    <div class="bg-green-50 p-4 rounded-xl text-center">
+                        <i class="ri-line-chart-line text-green-600 text-3xl mb-2 block"></i>
+                        <h3 class="font-bold text-green-800">Rendimiento</h3>
+                        <p id="metricPerformance" class="text-sm text-green-700">-</p>
+                    </div>
+                    <div class="bg-blue-50 p-4 rounded-xl text-center">
+                        <i class="ri-secure-payment-line text-blue-600 text-3xl mb-2 block"></i>
+                        <h3 class="font-bold text-blue-800">Riesgo</h3>
+                        <p id="metricRisk" class="text-sm text-blue-700">-</p>
+                    </div>
+                    <div class="bg-purple-50 p-4 rounded-xl text-center col-span-2">
+                        <i class="ri-wallet-line text-purple-600 text-3xl mb-2 block"></i>
+                        <h3 class="font-bold text-purple-800">Proyección Total</h3>
+                        <p id="metricTotal" class="text-sm text-purple-700">-</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-6 mt-6">
+                <div>
+                    <canvas id="growthChart" class="w-full h-64"></canvas>
+                </div>
+                <div>
+                    <canvas id="monthlyDistributionChart" class="w-full h-64"></canvas>
+                </div>
+            </div>
+
+            <div id="summary" class="text-center my-6 text-xl font-bold text-green-700"></div>
+
+            <div class="overflow-x-auto max-h-96 overflow-y-scroll">
+                <table id="tradingTable" class="w-full text-sm text-left text-gray-600 border border-gray-200">
+                    <thead class="text-xs text-white uppercase bg-green-500 sticky top-0">
+                        <tr>
+                            <th class="px-4 py-3">Día</th>
+                            <th class="px-4 py-3">Saldo Inicial</th>
+                            <th class="px-4 py-3">Meta Diaria</th>
+                            <th class="px-4 py-3">Nuevo Saldo</th>
+                            <th class="px-4 py-3">Riesgo</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tradingPlanBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <footer class="bg-gray-800 text-white py-4 text-center">
+        <p>&copy; 2024 Plan de Trading Profesional | Creado con ❤️ para traders</p>
+    </footer>
+
+    <script>
+        function calculateRisk(balance, riskPercentage) {
+            return balance * (riskPercentage / 100);
+        }
+
+        function adjustGrowthRate(baseRate, tradingStyle, riskRate) {
+            const styleMultipliers = {
+                'conservative': 0.5,
+                'balanced': 1,
+                'aggressive': 1.5
+            };
+            return baseRate * styleMultipliers[tradingStyle] * (1 - (riskRate / 100));
+        }
+
+        function generatePlan() {
+            const initialBalance = parseFloat(document.getElementById("initialBalance").value);
+            const baseGrowthRate = parseFloat(document.getElementById("growthRate").value) / 100;
+            const riskManagement = parseFloat(document.getElementById("riskManagement").value);
+            const months = parseInt(document.getElementById("months").value);
+            const tradingStyle = document.getElementById("tradingStyle").value;
+
+            const tableBody = document.getElementById("tradingPlanBody");
+            const summary = document.getElementById("summary");
+
+            tableBody.innerHTML = "";
+            let balance = initialBalance;
+            let totalProfit = 0;
+            let totalRisk = 0;
+            const totalDays = months * 30;
+
+            const balanceData = [initialBalance];
+            const monthlyData = Array(months).fill(0);
+            const days = ['Inicio'];
+            const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+
+            for (let day = 1; day <= totalDays; day++) {
+                const growthRate = adjustGrowthRate(baseGrowthRate, tradingStyle, riskManagement);
+                const dailyTarget = balance * growthRate;
+                const riskAmount = calculateRisk(balance, riskManagement);
+                const newBalance = balance + dailyTarget;
+
+                const row = `
+                    <tr class="border-b hover:bg-green-50">
+                        <td class="px-4 py-3">${day}</td>
+                        <td class="px-4 py-3">$${balance.toFixed(2)}</td>
+                        <td class="px-4 py-3">$${dailyTarget.toFixed(2)}</td>
+                        <td class="px-4 py-3">$${newBalance.toFixed(2)}</td>
+                        <td class="px-4 py-3">$${riskAmount.toFixed(2)}</td>
+                    </tr>
+                `;
+                tableBody.innerHTML += row;
+
+                totalProfit = newBalance - initialBalance;
+                totalRisk += riskAmount;
+                balance = newBalance;
+
+                if (day % 5 === 0) {
+                    balanceData.push(newBalance);
+                    days.push(`Día ${day}`);
+                }
+
+                const monthIndex = Math.floor((day - 1) / 30);
+                monthlyData[monthIndex] += dailyTarget;
+            }
+
+            summary.innerHTML = `Saldo Final: $${balance.toFixed(2)} | Ganancia Total: $${totalProfit.toFixed(2)}`;
+
+            // Actualizar métricas
+            document.getElementById('metricPerformance').textContent = `${(totalProfit / initialBalance * 100).toFixed(2)}%`;
+            document.getElementById('metricRisk').textContent = `$${totalRisk.toFixed(2)}`;
+            document.getElementById('metricTotal').textContent = `$${balance.toFixed(2)}`;
+
+            updateCharts(days, balanceData, monthlyData, monthNames.slice(0, months));
+        }
+
+        function updateCharts(days, balanceData, monthlyData, monthNames) {
+            updateGrowthChart(days, balanceData);
+            updateMonthlyDistributionChart(monthNames, monthlyData);
+        }
+
+        function updateGrowthChart(labels, data) {
+            const ctx = document.getElementById('growthChart').getContext('2d');
+            
+            if (window.growthChart instanceof Chart) {
+                window.growthChart.destroy();
+            }
+
+            window.growthChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Crecimiento del Saldo',
+                        data: data,
+                        borderColor: 'rgb(34, 197, 94)',
+                        tension: 0.1,
+                        backgroundColor: 'rgba(34, 197, 94, 0.2)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Proyección de Crecimiento'
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateMonthlyDistributionChart(labels, data) {
+            const ctx = document.getElementById('monthlyDistributionChart').getContext('2d');
+            
+            if (window.monthlyChart instanceof Chart) {
+                window.monthlyChart.destroy();
+            }
+
+            window.monthlyChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Distribución Mensual',
+                        data: data,
+                        backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                        borderColor: 'rgb(54, 162, 235)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Distribución de Ganancias por Mes'
+                        }
+                    }
+                }
+            });
+        }
+
+        function exportToExcel() {
+            const table = document.getElementById("tradingTable");
+            const workbook = XLSX.utils.table_to_book(table, { sheet: "Plan de Trading" });
+            XLSX.writeFile(workbook, "Plan_Trading_Profesional.xlsx");
+        }
+
+        window.onload = generatePlan;
+    </script>
+</body>
+</html>
